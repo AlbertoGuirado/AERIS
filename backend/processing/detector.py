@@ -1,0 +1,163 @@
+from ultralytics import YOLO
+import cv2
+import os
+
+MODEL_ISS_PATH = os.getenv("MODEL_ISS_PATH", "models/best_iss.pt")
+MODEL_IMPACT_PATH = os.getenv("MODEL_IMPACT_PATH", "models/best_impact.pt")
+SOURCE_PATH = os.getenv("SOURCE_PATH", "testVideo.mp4")
+DEFAULT_VIDEO_OUTPUT = os.getenv("VIDEO_OUTPUT_PATH", "output.mp4")
+DEFAULT_IMAGE_OUTPUT = os.getenv("IMAGE_OUTPUT_PATH", "output_image.jpg")
+
+CONF_ISS = float(os.getenv("CONF_ISS", 0.02))
+CONF_IMPACT = float(os.getenv("CONF_IMPACT", 0.3))
+IOU_THRESH = float(os.getenv("IOU_THRESH", 0.3))
+
+_model_iss = None
+_model_impacts = None
+
+
+def _load_models():
+    """Carga perezosa para reutilizar los pesos durante toda la vida del servidor."""
+    global _model_iss, _model_impacts
+    if _model_iss is None:
+        _model_iss = YOLO(MODEL_ISS_PATH)
+    if _model_impacts is None:
+        _model_impacts = YOLO(MODEL_IMPACT_PATH)
+    return _model_iss, _model_impacts
+
+
+def calculate_iou(box1, box2):
+    xA = max(box1[0], box2[0])
+    yA = max(box1[1], box2[1])
+    xB = min(box1[2], box2[2])
+    yB = min(box1[3], box2[3])
+    inter_area = max(0, xB - xA) * max(0, yB - yA)
+    if inter_area == 0:
+        return 0
+    box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+    box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+    return inter_area / float(box1_area + box2_area - inter_area)
+
+
+def process_frame(frame, model_iss, model_impacts, frame_id=None):
+    """Aplica ambos modelos a un frame y devuelve el frame anotado junto con los conteos."""
+    iss_result = model_iss(frame, conf=CONF_ISS, iou=IOU_THRESH, verbose=False)[0]
+    iss_boxes = iss_result.boxes.xyxy.cpu().numpy()
+    iss_classes = iss_result.boxes.cls.cpu().numpy() if iss_result.boxes.cls is not None else []
+    iss_conf = iss_result.boxes.conf.cpu().numpy() if iss_result.boxes.conf is not None else []
+    iss_names = iss_result.names
+
+    imp_result = model_impacts(frame, conf=CONF_IMPACT, iou=IOU_THRESH, verbose=False)[0]
+    imp_boxes = imp_result.boxes.xyxy.cpu().numpy()
+    imp_classes = imp_result.boxes.cls.cpu().numpy() if imp_result.boxes.cls is not None else []
+    imp_conf = imp_result.boxes.conf.cpu().numpy() if imp_result.boxes.conf is not None else []
+    imp_names = imp_result.names
+
+    for idx, iss_box in enumerate(iss_boxes):
+        x1, y1, x2, y2 = map(int, iss_box)
+        cls_name = iss_names.get(int(iss_classes[idx]), f"class_{int(iss_classes[idx])}") if len(iss_classes) else "ISS"
+        conf_val = float(iss_conf[idx]) if len(iss_conf) else 0.0
+        label = f"ISS: {cls_name} {conf_val:.2f}"
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 140, 255), 2)
+        cv2.putText(frame, label, (x1, max(y1 - 10, 0)), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 140, 255), 2)
+
+    for imp_idx, imp_box in enumerate(imp_boxes):
+        x1, y1, x2, y2 = map(int, imp_box)
+        impact_conf = float(imp_conf[imp_idx]) if len(imp_conf) else 0.0
+        impact_cls = imp_names.get(int(imp_classes[imp_idx]), f"class_{int(imp_classes[imp_idx])}") if len(imp_classes) else "Impacto"
+        x_center = 0.5 * (imp_box[0] + imp_box[2])
+        y_center = 0.5 * (imp_box[1] + imp_box[3])
+
+        matched_labels = []
+        for iss_idx, iss_box in enumerate(iss_boxes):
+            iou = calculate_iou(imp_box, iss_box)
+            if iou > 0:
+                iss_conf_val = float(iss_conf[iss_idx]) if len(iss_conf) else 0.0
+                iss_label = iss_names.get(int(iss_classes[iss_idx]), f"class_{int(iss_classes[iss_idx])}") if len(iss_classes) else "ISS"
+                matched_labels.append(f"{iss_label} (obj {iss_conf_val:.2f}, IoU {iou:.2f})")
+
+        details = "; ".join(matched_labels) if matched_labels else "sin objeto asociado"
+        print(
+            f"[frame {frame_id}] Impacto {impact_cls} conf={impact_conf:.2f} "
+            f"centro=({x_center:.1f}, {y_center:.1f}) -> {details}"
+        )
+
+        impact_label = f"Impacto: {impact_cls} {impact_conf:.2f}"
+        coord_label = f"({int(x_center)}, {int(y_center)})"
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+        cv2.putText(frame, impact_label, (x1, min(y2 + 20, frame.shape[0] - 10)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        cv2.putText(frame, coord_label, (x1, min(y2 + 40, frame.shape[0] - 5)),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        cv2.circle(frame, (int(x_center), int(y_center)), 4, (0, 0, 255), -1)
+
+    return frame, len(iss_boxes), len(imp_boxes)
+
+
+def process_image(input_path, output_path):
+    """Procesa una imagen, guarda el archivo resultante y devuelve los conteos."""
+    model_iss, model_impacts = _load_models()
+    frame = cv2.imread(input_path)
+    if frame is None:
+        raise ValueError(f"No se pudo leer la imagen: {input_path}")
+
+    processed_frame, iss_count, impact_count = process_frame(frame, model_iss, model_impacts, frame_id=0)
+    cv2.imwrite(output_path, processed_frame)
+    return {
+        "output_path": output_path,
+        "detected_elements": int(iss_count),
+        "impact_alerts": int(impact_count),
+    }
+
+
+def process_video(input_path, output_path):
+    """Procesa un video completo acumulando detecciones y guardando un MP4 anotado."""
+    model_iss, model_impacts = _load_models()
+    cap = cv2.VideoCapture(input_path)
+    if not cap.isOpened():
+        raise ValueError(f"No se pudo abrir el video: {input_path}")
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    fps = fps if fps and fps > 0 else 30.0
+    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    if width == 0 or height == 0:
+        cap.release()
+        raise ValueError("No se pudo determinar la resolucion del video de entrada.")
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+
+    total_iss = 0
+    total_impacts = 0
+    frame_id = 0
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frame_id += 1
+        processed_frame, iss_count, impact_count = process_frame(frame, model_iss, model_impacts, frame_id=frame_id)
+        total_iss += iss_count
+        total_impacts += impact_count
+        writer.write(processed_frame)
+
+    cap.release()
+    writer.release()
+
+    return {
+        "output_path": output_path,
+        "detected_elements": int(total_iss),
+        "impact_alerts": int(total_impacts),
+    }
+
+
+if __name__ == "__main__":
+    if SOURCE_PATH.lower().endswith((".mp4", ".avi", ".mov", ".mkv")):
+        result = process_video(SOURCE_PATH, DEFAULT_VIDEO_OUTPUT)
+    else:
+        result = process_image(SOURCE_PATH, DEFAULT_IMAGE_OUTPUT)
+
+    print(f"Elementos detectados: {result['detected_elements']}")
+    print(f"Impactos detectados: {result['impact_alerts']}")
+    print(f"Resultado guardado en: {result['output_path']}")
