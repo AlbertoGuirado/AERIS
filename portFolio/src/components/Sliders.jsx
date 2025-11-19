@@ -51,8 +51,8 @@ const SliderControl = ({ label, value, onChange }) => {
 };
 
 export const Sliders = ({
-  impactConfidence = 0.5,
-  objectConfidence = 0.5,
+  impactConfidence = 0.3,
+  objectConfidence = 0.02,
   onImpactChange,
   onObjectChange,
 }) => {

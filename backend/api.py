@@ -1,11 +1,16 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Request
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 import shutil
 import uuid
 import os
 import base64
-from processing.detector import process_video, process_image
+from processing.detector import (
+    process_video,
+    process_image,
+    CONF_ISS,
+    CONF_IMPACT,
+)
 
 app = FastAPI()
 
@@ -64,7 +69,12 @@ async def get_file(filename: str):
 
 
 @app.post("/analyze")
-async def analyze_file(request: Request, file: UploadFile = File(...)):
+async def analyze_file(
+    request: Request,
+    file: UploadFile = File(...),
+    object_confidence: float = Form(CONF_ISS),
+    impact_confidence: float = Form(CONF_IMPACT),
+):
     file_id = str(uuid.uuid4())
     input_path = os.path.join(UPLOAD_DIR, f"{file_id}_{file.filename}")
 
@@ -75,12 +85,22 @@ async def analyze_file(request: Request, file: UploadFile = File(...)):
     try:
         if file.content_type and file.content_type.startswith("video/"):
             output_path = os.path.join(OUTPUT_DIR, f"{file_id}.mp4")
-            result = process_video(input_path, output_path)
+            result = process_video(
+                input_path,
+                output_path,
+                iss_confidence=object_confidence,
+                impact_confidence=impact_confidence,
+            )
             return _build_payload(request, "video", "video/mp4", result)
 
         if file.content_type and file.content_type.startswith("image/"):
             output_path = os.path.join(OUTPUT_DIR, f"{file_id}.jpg")
-            result = process_image(input_path, output_path)
+            result = process_image(
+                input_path,
+                output_path,
+                iss_confidence=object_confidence,
+                impact_confidence=impact_confidence,
+            )
             return _build_payload(request, "image", "image/jpeg", result)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc

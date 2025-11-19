@@ -1,6 +1,8 @@
-from ultralytics import YOLO
-import cv2
+from typing import Optional
 import os
+
+import cv2
+from ultralytics import YOLO
 
 MODEL_ISS_PATH = os.getenv("MODEL_ISS_PATH", "models/best_iss.pt")
 MODEL_IMPACT_PATH = os.getenv("MODEL_IMPACT_PATH", "models/best_impact.pt")
@@ -26,6 +28,17 @@ def _load_models():
     return _model_iss, _model_impacts
 
 
+def _clamp_conf(value: Optional[float], default: float) -> float:
+    """Garantiza que la confianza enviada esta entre 0 y 1."""
+    if value is None:
+        return default
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return default
+    return max(0.0, min(1.0, parsed))
+
+
 def calculate_iou(box1, box2):
     xA = max(box1[0], box2[0])
     yA = max(box1[1], box2[1])
@@ -39,15 +52,25 @@ def calculate_iou(box1, box2):
     return inter_area / float(box1_area + box2_area - inter_area)
 
 
-def process_frame(frame, model_iss, model_impacts, frame_id=None):
+def process_frame(
+    frame,
+    model_iss,
+    model_impacts,
+    frame_id=None,
+    iss_confidence=None,
+    impact_confidence=None,
+):
     """Aplica ambos modelos a un frame y devuelve el frame anotado junto con los conteos."""
-    iss_result = model_iss(frame, conf=CONF_ISS, iou=IOU_THRESH, verbose=False)[0]
+    iss_threshold = _clamp_conf(iss_confidence, CONF_ISS)
+    impact_threshold = _clamp_conf(impact_confidence, CONF_IMPACT)
+
+    iss_result = model_iss(frame, conf=iss_threshold, iou=IOU_THRESH, verbose=False)[0]
     iss_boxes = iss_result.boxes.xyxy.cpu().numpy()
     iss_classes = iss_result.boxes.cls.cpu().numpy() if iss_result.boxes.cls is not None else []
     iss_conf = iss_result.boxes.conf.cpu().numpy() if iss_result.boxes.conf is not None else []
     iss_names = iss_result.names
 
-    imp_result = model_impacts(frame, conf=CONF_IMPACT, iou=IOU_THRESH, verbose=False)[0]
+    imp_result = model_impacts(frame, conf=impact_threshold, iou=IOU_THRESH, verbose=False)[0]
     imp_boxes = imp_result.boxes.xyxy.cpu().numpy()
     imp_classes = imp_result.boxes.cls.cpu().numpy() if imp_result.boxes.cls is not None else []
     imp_conf = imp_result.boxes.conf.cpu().numpy() if imp_result.boxes.conf is not None else []
@@ -94,14 +117,21 @@ def process_frame(frame, model_iss, model_impacts, frame_id=None):
     return frame, len(iss_boxes), len(imp_boxes)
 
 
-def process_image(input_path, output_path):
+def process_image(input_path, output_path, iss_confidence=None, impact_confidence=None):
     """Procesa una imagen, guarda el archivo resultante y devuelve los conteos."""
     model_iss, model_impacts = _load_models()
     frame = cv2.imread(input_path)
     if frame is None:
         raise ValueError(f"No se pudo leer la imagen: {input_path}")
 
-    processed_frame, iss_count, impact_count = process_frame(frame, model_iss, model_impacts, frame_id=0)
+    processed_frame, iss_count, impact_count = process_frame(
+        frame,
+        model_iss,
+        model_impacts,
+        frame_id=0,
+        iss_confidence=iss_confidence,
+        impact_confidence=impact_confidence,
+    )
     cv2.imwrite(output_path, processed_frame)
     return {
         "output_path": output_path,
@@ -110,7 +140,7 @@ def process_image(input_path, output_path):
     }
 
 
-def process_video(input_path, output_path):
+def process_video(input_path, output_path, iss_confidence=None, impact_confidence=None):
     """Procesa un video completo acumulando detecciones y guardando un MP4 anotado."""
     model_iss, model_impacts = _load_models()
     cap = cv2.VideoCapture(input_path)
@@ -137,7 +167,14 @@ def process_video(input_path, output_path):
         if not ret:
             break
         frame_id += 1
-        processed_frame, iss_count, impact_count = process_frame(frame, model_iss, model_impacts, frame_id=frame_id)
+        processed_frame, iss_count, impact_count = process_frame(
+            frame,
+            model_iss,
+            model_impacts,
+            frame_id=frame_id,
+            iss_confidence=iss_confidence,
+            impact_confidence=impact_confidence,
+        )
         total_iss += iss_count
         total_impacts += impact_count
         writer.write(processed_frame)

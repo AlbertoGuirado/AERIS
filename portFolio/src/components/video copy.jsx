@@ -5,6 +5,15 @@ const FALLBACK_IMAGE = "FitYou.png";
 const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 const ANALYZE_ENDPOINT = `${API_BASE_URL}/analyze`;
 
+const clampConfidence = (value) => {
+  if (Number.isFinite(value)) {
+    if (value < 0) return 0;
+    if (value > 1) return 1;
+    return value;
+  }
+  return 0;
+};
+
 export const VideoCopy = ({
   source,
   mediaType = "video",
@@ -13,12 +22,17 @@ export const VideoCopy = ({
   autoPlay = true,
   detectedElements = 0,
   impactAlerts = 0,
+  impactConfidence = 0.3,
+  objectConfidence = 0.02,
 }) => {
   const inputRef = useRef(null);
   const [preview, setPreview] = useState(null); // { src, type, isObjectUrl }
   const [processedMedia, setProcessedMedia] = useState(null); // API response
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadError, setUploadError] = useState(error ?? null);
+
+  const normalizedImpactConfidence = clampConfidence(impactConfidence);
+  const normalizedObjectConfidence = clampConfidence(objectConfidence);
 
   useEffect(() => {
     if (!preview?.isObjectUrl || !preview?.src) {
@@ -47,6 +61,8 @@ export const VideoCopy = ({
   const analyzeFile = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("impact_confidence", String(normalizedImpactConfidence));
+    formData.append("object_confidence", String(normalizedObjectConfidence));
     setIsProcessing(true);
     setUploadError(null);
     try {
@@ -109,7 +125,7 @@ export const VideoCopy = ({
 
   return (
     <section id="VideoCopy" className="media-panel mx-auto max-w-3xl px-4 py-17 sm:px-6">
-      <div className="media-wrapper relative mx-auto aspect-video w-full max-w-2xl overflow-hidden rounded-2xl border border-border/40 bg-card/30 shadow-2xl backdrop-blur">
+      <div className="media-wrapper relative mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-border/40 bg-card/30 shadow-2xl backdrop-blur">
         {isVideo ? (
           <video
             className="media-element h-full w-full object-cover"
