@@ -1,9 +1,7 @@
-fastapi
-uvicorn
-python-multipart
-opencv-python
-ultralytics
-numpy
-Tuple
-Optional
-Path
+fastapi==0.121.3
+uvicorn==0.38.0
+python-multipart==0.0.20
+opencv-python==4.12.0.88
+ultralytics==8.3.229
+numpy==1.26.0
+pydantic==2.7.2
