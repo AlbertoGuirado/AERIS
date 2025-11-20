@@ -4,7 +4,7 @@ import LiquidGlass from "./LiquidGlass";
 
 export const AboutSection = () => {
   return (
-    <section id="model" className="py-24 px-4 relative">
+    <section id="model" className="py-24 px-4 relative scroll-mt-32 md:scroll-mt-40">
       <div className="container mx-auto max-w-6xl">
         <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">
           About <span className="text-primary">AERIS</span>

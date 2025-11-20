@@ -2,8 +2,55 @@ import { useEffect, useRef, useState } from "react";
 
 const FALLBACK_VIDEO = "/projects/video.mp4";
 const FALLBACK_IMAGE = "FitYou.png";
-const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
+const DEFAULT_API_URL = "http://localhost:8000";
+
+const trimTrailingSlash = (value) =>
+  typeof value === "string" ? value.replace(/\/+$/, "") : "";
+
+const isLocalHost = (hostname) => {
+  if (!hostname) return false;
+  const lower = hostname.toLowerCase();
+  return (
+    lower === "localhost" ||
+    lower === "127.0.0.1" ||
+    lower === "::1" ||
+    lower.startsWith("192.168.") ||
+    lower.startsWith("10.") ||
+    lower.endsWith(".local")
+  );
+};
+
+const resolveApiBaseUrl = () => {
+  const envUrl = trimTrailingSlash(import.meta.env?.VITE_API_URL);
+  if (envUrl) {
+    return envUrl;
+  }
+  if (typeof window !== "undefined" && window.location?.origin) {
+    const { origin, hostname } = window.location;
+    if (origin && hostname && !isLocalHost(hostname)) {
+      return trimTrailingSlash(origin);
+    }
+  }
+  return DEFAULT_API_URL;
+};
+
+const API_BASE_URL = resolveApiBaseUrl();
 const ANALYZE_ENDPOINT = `${API_BASE_URL}/analyze`;
+const FILE_ENDPOINT = `${API_BASE_URL}/file`;
+
+const normalizeFileUrl = (httpUrl, fileName) => {
+  if (typeof httpUrl === "string" && /^https?:\/\//i.test(httpUrl)) {
+    return httpUrl;
+  }
+  if (fileName) {
+    return `${FILE_ENDPOINT}/${encodeURIComponent(fileName)}`;
+  }
+  if (typeof httpUrl === "string" && httpUrl.trim()) {
+    const sanitized = httpUrl.replace(/^\//, "");
+    return `${API_BASE_URL}/${sanitized}`;
+  }
+  return "";
+};
 
 const clampConfidence = (value) => {
   if (Number.isFinite(value)) {
@@ -55,7 +102,7 @@ export const VideoCopy = ({
     if (result.type === "image" && result.fileData) {
       return `data:${result.mimeType};base64,${result.fileData}`;
     }
-    return result.httpUrl;
+    return normalizeFileUrl(result.httpUrl, result.fileName);
   };
 
   const analyzeFile = async (file) => {
@@ -72,7 +119,7 @@ export const VideoCopy = ({
       });
       const payload = await response.json().catch(() => null);
       if (!response.ok) {
-        const detail = payload?.detail || payload?.message || "Error al procesar el archivo";
+        const detail = payload?.detail || payload?.message || "Error processing the file";
         throw new Error(detail);
       }
 
@@ -84,10 +131,18 @@ export const VideoCopy = ({
       if (typeof onUpload === "function") {
         onUpload({ file, analysis: result });
       }
-    } catch (err) {
-      console.error(err);
-      setUploadError(err.message || "No pudimos comunicarnos con el servidor.");
-    } finally {
+  } catch (err) {
+    console.error(err);
+    const message = (err && err.message) || "We could not reach the server.";
+    const normalizedMessage = (() => {
+      const lowered = message.toLowerCase();
+      if (lowered.includes("network") || lowered.includes("fetch") || lowered.includes("failed")) {
+        return `We could not reach the API at ${ANALYZE_ENDPOINT}. Check that the backend is running and that the URL is correct.`;
+      }
+      return message;
+    })();
+    setUploadError(normalizedMessage);
+  } finally {
       setIsProcessing(false);
     }
   };
@@ -124,7 +179,7 @@ export const VideoCopy = ({
   const totalImpacts = processedMedia?.impactAlerts ?? impactAlerts;
 
   return (
-    <section id="VideoCopy" className="media-panel mx-auto max-w-3xl px-4 py-17 sm:px-6">
+    <section id="VideoCopy" className="media-panel mx-auto max-w-3xl px-4 py-18 sm:px-6">
       <div className="media-wrapper relative mx-auto w-full max-w-2xl overflow-hidden rounded-2xl border border-border/40 bg-card/30 shadow-2xl backdrop-blur">
         {isVideo ? (
           <video
@@ -136,7 +191,7 @@ export const VideoCopy = ({
             autoPlay={autoPlay}
             playsInline
           >
-            Tu navegador no soporta el video HTML5.
+            Your browser does not support HTML5 video.
           </video>
         ) : (
           <img
@@ -148,7 +203,7 @@ export const VideoCopy = ({
 
         {isProcessing ? (
           <div className="absolute inset-0 flex items-center justify-center bg-background/60 text-sm font-medium text-foreground/80">
-            Procesando archivo…
+            Processing file...
           </div>
         ) : null}
       </div>
@@ -169,16 +224,16 @@ export const VideoCopy = ({
           disabled={isProcessing}
           className="rounded-full border border-border/50 px-5 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-primary hover:text-primary-foreground bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {isProcessing ? "Analizando…" : "Añadir multimedia"}
+          {isProcessing ? "Analyzing..." : "Add media"}
         </button>
 
         <div className="mt-4 grid w-full gap-3 sm:grid-cols-2">
           <div className="w-full rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-left shadow-inner">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Elementos detectados</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Detected elements</p>
             <p className="text-2xl font-semibold text-foreground">#{totalDetected}</p>
           </div>
           <div className="w-full rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-left shadow-inner">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Alertas de impactos</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Impact alerts</p>
             <p className="text-2xl font-semibold text-foreground">#{totalImpacts}</p>
           </div>
         </div>
@@ -186,24 +241,24 @@ export const VideoCopy = ({
         <div className="w-full rounded-xl border border-dashed border-border/50 bg-card/30 px-4 py-4 text-left text-foreground shadow-inner">
           {processedMedia ? (
             <>
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Archivo procesado</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Processed file</p>
               <p className="text-sm font-semibold">{processedMedia.fileName}</p>
               <p className="text-xs text-muted-foreground">{processedMedia.mimeType}</p>
               <a
-                href={processedMedia.httpUrl}
+                href={normalizeFileUrl(processedMedia.httpUrl, processedMedia.fileName)}
                 target="_blank"
                 rel="noreferrer"
                 className="mt-2 inline-flex text-xs font-semibold text-primary underline"
               >
-                Abrir o descargar resultado
+                Open or download result
               </a>
               <p className="mt-3 text-xs text-muted-foreground">
-                El archivo ya contiene las bounding boxes y anotaciones generadas por los modelos. Usa los datos para reportes o para descargar el video/imágen final.
+                The file already includes the bounding boxes and annotations generated by the models. Use the data for reports or to download the final video/image.
               </p>
             </>
           ) : (
             <p className="text-xs text-muted-foreground">
-              Sube un video o imagen para que la API procese la información, añada las cajas delimitadoras y devuelva estadísticas.
+              Upload a video or image so the API can process the information, add the bounding boxes, and return statistics.
             </p>
           )}
         </div>

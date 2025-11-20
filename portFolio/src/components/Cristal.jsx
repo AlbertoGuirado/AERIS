@@ -1,6 +1,6 @@
 import { Linkedin, Mail, Github } from "lucide-react";
 import React from "react";
-import iconDownloadCVUrl from "../assets/icons/IconDownloadCV.png";
+import iconDownloadCVUrl from "../assets/icons/portfolio.png";
 
 export default function Frame() {
   const [copied, setCopied] = React.useState(false);
@@ -49,11 +49,11 @@ export default function Frame() {
       icon: (
         <img
           src={iconDownloadCVUrl}
-          alt="Download CV"
+          alt="Portfolio"
           className="w-10 h-10 text-white"
         />
       ),
-      alt: "Download CV",
+      alt: "Portfolio",
       onClick: handleCvClick,
     },
     {
@@ -64,11 +64,11 @@ export default function Frame() {
   ];
 
   return (
-<div className="w-full max-w-[649px] h-[86px] mx-auto rounded-[10px] bg-white/10 backdrop-blur-md border border-white/20 shadow-md flex items-center justify-around px-6 relative z-50 pointer-events-auto">
+<div className="w-full max-w-[649px] h-[86px] mx-auto rounded-[20px] bg-white/5 backdrop-blur-lg border border-white/15 shadow-lg flex items-center justify-around px-6 relative z-50 pointer-events-auto">
       {socialIcons.map((item, index) => (
         <div
           key={index}
-          className="hover:scale-110 transition-transform duration-300 cursor-pointer"
+          className="hover:scale-150 transition-transform duration-300 cursor-pointer"
           aria-label={item.alt}
           onClick={item.onClick}
         >
@@ -77,7 +77,7 @@ export default function Frame() {
       ))}
 
       {copied && (
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-4 py-2 bg-teal-500 rounded-[10px] bg-white/10 backdrop-blur-md border border-white/20 text-white shadow animation-fade-in-10">
+        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-4 py-2 bg-teal-500 rounded-[20px] bg-white/10 backdrop-blur-md border border-white/20 text-white shadow animation-fade-in-10 ">
           Copied email!
         </div>
       )}

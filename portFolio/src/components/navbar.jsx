@@ -43,10 +43,10 @@ export const Navbar = () => {
             href="#hero"
           >
             <span className="relative z-10">
-              <span className="text-glow text-foreground">
-                International Space Station
-              </span>{" "}
-              Impact Tracker
+              AERIS
+            </span>
+            <span className="text-glow text-foreground ml-5">
+              Aerospace External Risk Identification System 
             </span>
           </a>
 

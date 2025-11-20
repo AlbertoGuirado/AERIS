@@ -42,7 +42,7 @@ export const Video = ({
             autoPlay={autoPlay}
             playsInline
           >
-            Tu navegador no soporta el video HTML5.
+            Your browser does not support HTML5 video.
           </video>
         ) : (
           <img
@@ -63,10 +63,10 @@ export const Video = ({
               onChange={handleFileChange}
               hidden
             />
-            <span>Agregar video o imagen</span>
+            <span>Add video or image</span>
           </label>
           <p className="upload-hint text-center text-xs sm:text-sm">
-            Formatos compatibles: MP4, MOV, JPG, PNG y más.
+            Supported formats: MP4, MOV, JPG, PNG and more.
           </p>
           {error ? <p className="upload-error">{error}</p> : null}
         </div>

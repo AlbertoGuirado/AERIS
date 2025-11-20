@@ -25,7 +25,7 @@ export const Building = ({ className = "", detailLevel = 3 }) => {
             <p
               className={`mt-5 text-xs uppercase tracking-[0.35em] ${labelColor}`}
             >
-              Seccion en obras
+              Section under construction
             </p>
           </>
         )}
@@ -33,11 +33,11 @@ export const Building = ({ className = "", detailLevel = 3 }) => {
         {showExpanded && (
           <>
             <h2 className="mt-3 text-2xl font-semibold text-foreground sm:text-3xl">
-              Estamos ensamblando esta parte
+              We are assembling this module
             </h2>
             <p className="mt-4 text-sm text-muted-foreground">
-              Estamos terminando los ultimos ajustes. Vuelve pronto para explorar el
-              modulo completo con datos de mision en vivo.
+              We are finishing the last adjustments. Check back soon to explore the
+              full module with live mission data.
             </p>
           </>
         )}
@@ -45,7 +45,7 @@ export const Building = ({ className = "", detailLevel = 3 }) => {
         {showProgress && (
           <div className="mt-6 inline-flex items-center gap-3 rounded-full border border-border/60 px-4 py-1.5 text-[0.65rem] uppercase tracking-[0.35em] text-muted-foreground sm:mt-8 sm:px-5 sm:py-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-primary"></span>
-            Build en progreso
+            Build in progress
           </div>
         )}
       </div>

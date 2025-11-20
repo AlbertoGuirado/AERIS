@@ -1,5 +1,8 @@
-from typing import Optional
+from typing import Optional, Tuple
 import os
+import subprocess
+import shutil
+from pathlib import Path
 
 import cv2
 from ultralytics import YOLO
@@ -16,6 +19,17 @@ IOU_THRESH = float(os.getenv("IOU_THRESH", 0.3))
 
 _model_iss = None
 _model_impacts = None
+
+_DEFAULT_CODECS = ("mp4v", "XVID", "avc1", "H264")
+_CODEC_PREFS = tuple(
+    filter(
+        None,
+        (
+            os.getenv("VIDEO_WRITER_CODECS") or ",".join(_DEFAULT_CODECS)
+        ).replace(" ", "").split(","),
+    )
+)
+_FFMPEG_BINARY = shutil.which(os.getenv("FFMPEG_BIN", "ffmpeg"))
 
 
 def _load_models():
@@ -37,6 +51,65 @@ def _clamp_conf(value: Optional[float], default: float) -> float:
     except (TypeError, ValueError):
         return default
     return max(0.0, min(1.0, parsed))
+
+
+def _init_video_writer(path: str, fps: float, width: int, height: int) -> Tuple[cv2.VideoWriter, str]:
+    """Intenta crear un VideoWriter probando varios codecs hasta encontrar uno soportado."""
+    path = str(path)
+    last_error = None
+    for codec in _CODEC_PREFS:
+        fourcc = cv2.VideoWriter_fourcc(*codec)
+        writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
+        if writer.isOpened():
+            return writer, codec
+        last_error = codec
+        writer.release()
+    raise ValueError(
+        "No se pudo inicializar el escritor de video. "
+        f"Verifica los codecs instalados (intentados: {', '.join(_CODEC_PREFS)}). "
+        f"Ultimo intento fallido con codec: {last_error}"
+    )
+
+
+def _transcode_to_h264(source_path: str, target_path: str) -> str:
+    """Convierte el video temporal al formato H.264 compatible con navegadores."""
+    source = Path(source_path)
+    target = Path(target_path)
+    if _FFMPEG_BINARY is None:
+        os.replace(source, target)
+        print("[detector] ffmpeg no disponible: entregando video en codec original (puede no funcionar en navegadores).")
+        return "copy"
+
+    preset = os.getenv("FFMPEG_PRESET", "veryfast")
+    cmd = [
+        _FFMPEG_BINARY,
+        "-y",
+        "-loglevel",
+        "error",
+        "-i",
+        str(source),
+        "-c:v",
+        "libx264",
+        "-preset",
+        preset,
+        "-pix_fmt",
+        "yuv420p",
+        "-movflags",
+        "+faststart",
+        "-an",
+        str(target),
+    ]
+    process = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    if process.returncode != 0:
+        raise RuntimeError(
+            "ffmpeg no pudo convertir el video a H.264: "
+            f"{process.stderr.strip() or process.stdout.strip()}"
+        )
+    try:
+        source.unlink()
+    except FileNotFoundError:
+        pass
+    return "h264"
 
 
 def calculate_iou(box1, box2):
@@ -155,35 +228,56 @@ def process_video(input_path, output_path, iss_confidence=None, impact_confidenc
         cap.release()
         raise ValueError("No se pudo determinar la resolucion del video de entrada.")
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    writer = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
+    final_output_path = Path(output_path)
+    temp_output_path = final_output_path.with_suffix(".tmp.mp4")
+    if temp_output_path.exists():
+        try:
+            temp_output_path.unlink()
+        except OSError:
+            pass
+    writer, codec_used = _init_video_writer(str(temp_output_path), fps, width, height)
 
     total_iss = 0
     total_impacts = 0
     frame_id = 0
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        frame_id += 1
-        processed_frame, iss_count, impact_count = process_frame(
-            frame,
-            model_iss,
-            model_impacts,
-            frame_id=frame_id,
-            iss_confidence=iss_confidence,
-            impact_confidence=impact_confidence,
+    try:
+        print(
+            f"[detector] Procesando video {input_path} -> {final_output_path} "
+            f"usando codec base {codec_used} ({width}x{height}@{fps:.2f}fps)"
         )
-        total_iss += iss_count
-        total_impacts += impact_count
-        writer.write(processed_frame)
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frame_id += 1
+            processed_frame, iss_count, impact_count = process_frame(
+                frame,
+                model_iss,
+                model_impacts,
+                frame_id=frame_id,
+                iss_confidence=iss_confidence,
+                impact_confidence=impact_confidence,
+            )
+            total_iss += iss_count
+            total_impacts += impact_count
+            writer.write(processed_frame)
+    finally:
+        cap.release()
+        writer.release()
 
-    cap.release()
-    writer.release()
+    try:
+        encoding_mode = _transcode_to_h264(str(temp_output_path), str(final_output_path))
+        print(f"[detector] Video final exportado como {final_output_path} (modo {encoding_mode})")
+    except Exception as exc:
+        try:
+            temp_output_path.unlink()
+        except FileNotFoundError:
+            pass
+        raise ValueError(f"No se pudo convertir el video a un formato compatible: {exc}") from exc
 
     return {
-        "output_path": output_path,
+        "output_path": str(final_output_path),
         "detected_elements": int(total_iss),
         "impact_alerts": int(total_impacts),
     }

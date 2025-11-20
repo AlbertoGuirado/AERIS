@@ -2,11 +2,10 @@ import { useState } from "react";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { Navbar } from "../components/navbar";
 import { InteractiveCrossBackground } from "../components/InteractiveCrossBackground";
-import { Video } from "../components/video";
 import { Sliders } from "../components/Sliders";
 import { Proyect } from "../components/Proyect";
 import { Author } from "../components/Author";
-import { VideoCopy } from "../components/video copy.jsx";
+import { VideoCopy } from "../components/VideoFrame.jsx";
 import { Building } from "../components/building.jsx";
 
 const DEFAULT_IMPACT_CONFIDENCE = 0.3;

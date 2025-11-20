@@ -70,7 +70,7 @@ export const VideoCopy = ({
             autoPlay={autoPlay}
             playsInline
           >
-            Tu navegador no soporta el video HTML5.
+            Your browser does not support HTML5 video.
           </video>
         ) : (
           <img
@@ -96,18 +96,18 @@ export const VideoCopy = ({
           onClick={handleUploadButtonClick}
           className="rounded-full border border-border/50 px-5 py-2 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-primary hover:text-primary-foreground bg-primary text-primary-foreground cursor-pointer"
         >
-          Anadir multimedia
+          Add media
         </button>
         <div className="mt-4 grid w-full gap-3 sm:grid-cols-2">
           <div className="w-full rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-left shadow-inner">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Elementos detectados
+              Detected elements
             </p>
             <p className="text-2xl font-semibold text-foreground">#{detectedElements}</p>
           </div>
           <div className="w-full rounded-xl border border-border/40 bg-card/40 px-4 py-3 text-left shadow-inner">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              Alerta de impactos
+              Impact alerts
             </p>
             <p className="text-2xl font-semibold text-foreground">#{impactAlerts}</p>
           </div>

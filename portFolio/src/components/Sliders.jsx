@@ -100,25 +100,24 @@ export const Sliders = ({
     <section className="controls mx-auto mt-10 w-full max-w-2xl rounded-3xl border border-border/50 bg-background/40 p-6 shadow-2xl backdrop-blur">
       <div className="mb-6 flex flex-col gap-2 text-left">
         <p className="text-xs uppercase tracking-[0.3em] text-primary/80">
-          Centro de calibracion
+          Calibration center
         </p>
         <h2 className="text-2xl font-semibold text-foreground">
-          Ajustes de modelos
+          Model settings
         </h2>
         <p className="text-sm text-muted-foreground">
-          Ajusta manualmente la sensibilidad de los modelos ISS para equilibrar
-          la deteccion de impacto y objetos.
+          Manually adjust the ISS model sensitivity to balance impact and object detection.
         </p>
       </div>
 
       <div className="space-y-4">
         <SliderControl
-          label="Conf. modelo ISS_Impact"
+          label="ISS_Impact confidence"
           value={impactValue}
           onChange={handleImpactChange}
         />
         <SliderControl
-          label="Conf. modelo ISS_Object"
+          label="ISS_Object confidence"
           value={objectValue}
           onChange={handleObjectChange}
         />

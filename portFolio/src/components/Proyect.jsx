@@ -1,51 +1,61 @@
 import { Brain, Database, Gauge, Layers } from "lucide-react";
-
 const summaryCards = [
   {
     title: "Dataset",
-    value: "38K frames",
+    value: "Proprietary + Synthetic",
     description:
-      "Secuencias EVA, cámaras exteriores de la ISS y renders sintéticos con randomización para cubrir condiciones de luz extremas.",
+      "Based on ISS sequences and complemented with a synthetic dataset generated via randomization (lighting, orientation, noise, textures) to improve robustness in extreme conditions and micro-impact detection.",
     Icon: Database,
   },
   {
-    title: "División",
-    value: "70% / 20% / 10%",
+    title: "Split",
+    value: "70 / 20 / 10",
     description:
-      "Entrenamiento, validación y test manteniendo balance día/noche y escenarios de actitud orbital.",
+      "Train/Validation/Test, ensuring zero overlap between models (ISS and Impacts) for an isolated and rigorous evaluation of performance by object type.",
     Icon: Layers,
   },
   {
-    title: "Modelo",
-    value: "YOLOv8n + LSTM",
+    title: "Model",
+    value: "YOLOv12n/m (Dual)",
     description:
-      "Detector ligero cuantizado a INT8 y suavizado temporal para reducir falsos positivos por reflejos.",
+      "Optimized YOLOv12 architecture organized into two independent models: ISS Model (structures) and Impacts Model (precise micro-debris detection with automatic IoU calculation).",
     Icon: Brain,
   },
   {
-    title: "Rendimiento",
-    value: "92% F1 · 210 ms",
+    title: "Performance",
+    value: "mAP50 (0.65–0.70)",
     description:
-      "Mediana de inferencia en Jetson Orin Nano con límite de 8 GB y respuesta en menos de 250 ms.",
+      "mAP50 between 0.65–0.70 in the ISS Model. Validated in real-time with stable inference and no frame loss on an RTX 3050, even with limited VRAM.",
     Icon: Gauge,
   },
 ];
 
 export const Proyect = () => {
   return (
-    <section id="model" className="py-24 px-4 relative">
+    <section id="model" className="py-14 px-4 relative">
       <div className="container mx-auto max-w-6xl">
+        <h2 className="text-3xl md:text-3xl font-bold">
+          <span className="text-primary text-4xl md:text-5xl inline-block ">A</span>erospace{" "}
+          <span className="text-primary text-4xl md:text-5xl inline-block ">E</span>xternal{" "}
+          <span className="text-primary text-4xl md:text-5xl inline-block ">R</span>isk{" "}
+          <span className="text-primary text-4xl md:text-5xl inline-block ">I</span>dentification{" "}
+          <span className="text-primary text-4xl md:text-5xl inline-block ">S</span>ystem
+        </h2>
+        <img
+          src="/icons/icondef.png"
+          alt="AERIS logo"
+          className="mx-auto my-6 h-100 w-auto object-contain"
+          loading="lazy"
+        />
         <div className="mx-auto max-w-3xl text-center space-y-4">
           <p className="text-xs uppercase tracking-[0.4em] text-primary/80">
             ML Mission Brief
           </p>
           <h2 className="text-3xl md:text-4xl font-bold">
-            Resumen del pipeline de detección
+            Detection Pipeline Overview
           </h2>
           <p className="text-muted-foreground">
-            El sistema procesa flujo continuo de video exterior de la ISS,
-            limpia ruido de micro-partículas y evalúa eventos de impacto en
-            tiempo real, priorizando latencia baja sobre consumo energético.
+            AERIS (Aerospace External Risk Identification System) is a critical Artificial Intelligence platform leveraging a specialized dual YOLOv12 model architecture for high-precision, real-time detection and analysis of micro-impacts and structural damage on high-value orbital assets.
           </p>
         </div>
 
