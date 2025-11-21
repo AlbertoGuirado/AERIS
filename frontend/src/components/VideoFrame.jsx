@@ -26,11 +26,15 @@ const resolveApiBaseUrl = () => {
   if (envUrl) {
     return envUrl;
   }
+  /*
   if (typeof window !== "undefined" && window.location?.origin) {
     const { origin, hostname } = window.location;
     if (origin && hostname && !isLocalHost(hostname)) {
       return trimTrailingSlash(origin);
     }
+  }*/
+  if (typeof window !== "undefined" && isLocalHost(window.    location.hostname)) {
+    return DEFAULT_API_URL_LOCAL; // desarrollo local
   }
   return DEFAULT_API_URL;
 };
