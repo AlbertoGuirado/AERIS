@@ -1,8 +1,8 @@
-FROM python:3.11
+FROM python:3.11-slim
 
 WORKDIR /app
 
-# Dependencias correctas para OpenCV en Debian 12 (Trixie)
+# Dependencias mínimas para OpenCV
 RUN apt-get update && apt-get install -y \
     libgl1 \
     libglib2.0-0 \
@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt .
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt --timeout 2000
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 

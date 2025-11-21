@@ -1,0 +1,14 @@
+__pycache__
+.env
+*.mp4
+*.mov
+*.avi
+*.jpg
+*.png
+*.pt
+*.pth
+runs/
+venv/
+.venv/
+.idea/
+.DS_Store
