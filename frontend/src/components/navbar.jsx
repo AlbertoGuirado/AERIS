@@ -40,7 +40,7 @@ export const Navbar = () => {
           {/* Title */}
           <a
             className="text-xl font-bold text-primary flex items-center"
-            href="#hero"
+            href="#videoCopy"
           >
             <span className="relative z-10">
               AERIS

@@ -81,16 +81,7 @@ export const Proyect = () => {
           ))}
           
         </div>
-        <div className="pt-10 opacity-0 animate-fade-in-delay-4">
-          <a
-            href="https://github.com/ISS-AERIS/aeris-impact-detector"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="cosmic-button"
-          >
-            Check the model
-          </a>
-        </div>
+        
       </div>
     </section>
   );
