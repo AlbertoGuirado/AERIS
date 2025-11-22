@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 const FALLBACK_VIDEO = "/projects/video.mp4";
 const FALLBACK_IMAGE = "FitYou.png";
 const DEFAULT_API_URL_LOCAL = "http://localhost:8000";
-const DEFAULT_API_URL = "https://aeris-production.up.railway.app";
+const DEFAULT_API_URL = "https://aeris-backend.up.railway.app";
 
 const trimTrailingSlash = (value) =>
   typeof value === "string" ? value.replace(/\/+$/, "") : "";
