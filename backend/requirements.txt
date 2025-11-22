@@ -1,21 +1,15 @@
 fastapi==0.121.3
 uvicorn==0.38.0
 python-multipart==0.0.20
-
-# OpenCV sin GUI (mucho más ligero)
 opencv-python-headless==4.10.0.84
-
-# NUMPY: compatible con torch + ultralytics + opencv
 numpy==1.26.4
-
 pydantic==2.7.2
 
-# PyTorch CPU (compatible)
+# Torch CPU
 torch==2.2.0+cpu
 torchvision==0.17.0+cpu
 torchaudio==2.2.0+cpu
-
-# Ultralytics compatible con numpy < 2.0
-ultralytics==8.3.63
-
 --extra-index-url https://download.pytorch.org/whl/cpu
+
+# 💥 Importante para YOLOv12
+ultralytics==8.3.70
