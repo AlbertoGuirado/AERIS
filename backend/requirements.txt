@@ -5,10 +5,8 @@ opencv-python-headless==4.10.0.84
 numpy==1.26.4
 pydantic==2.7.2
 
-# ❌ BORRADO: ultralytics==8.3.63
-# (Ya no lo instalamos desde internet, usaremos la carpeta local)
-
-# ✅ AÑADIDO: Dependencias que necesita ultralytics para funcionar
+# 📦 DEPENDENCIAS DE ULTRALYTICS (Manuales)
+# Como usamos la carpeta local, necesitamos instalar esto explícitamente:
 matplotlib>=3.3.0
 pillow>=10.3.0
 pyyaml>=5.3.1
@@ -16,8 +14,13 @@ requests>=2.32.0
 scipy>=1.4.1
 tqdm>=4.64.0
 psutil
+pandas
+seaborn
 
-# Torch CPU (Igual que antes)
+# 🚨 LA QUE TE FALTABA (Causa del crash actual)
+huggingface-hub>=0.20.0
+
+# Torch CPU
 torch==2.2.0+cpu
 torchvision==0.17.0+cpu
 torchaudio==2.2.0+cpu
