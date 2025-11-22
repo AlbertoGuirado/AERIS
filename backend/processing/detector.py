@@ -13,7 +13,7 @@ SOURCE_PATH = os.getenv("SOURCE_PATH", "testVideo.mp4")
 DEFAULT_VIDEO_OUTPUT = os.getenv("VIDEO_OUTPUT_PATH", "output.mp4")
 DEFAULT_IMAGE_OUTPUT = os.getenv("IMAGE_OUTPUT_PATH", "output_image.jpg")
 
-CONF_ISS = float(os.getenv("CONF_ISS", 0.02))
+CONF_ISS = float(os.getenv("CONF_ISS", 0.2))
 CONF_IMPACT = float(os.getenv("CONF_IMPACT", 0.3))
 IOU_THRESH = float(os.getenv("IOU_THRESH", 0.3))
 
