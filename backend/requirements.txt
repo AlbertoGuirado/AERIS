@@ -5,11 +5,9 @@ opencv-python-headless==4.10.0.84
 numpy==1.26.4
 pydantic==2.7.2
 
-# Torch CPU
 torch==2.2.0+cpu
 torchvision==0.17.0+cpu
 torchaudio==2.2.0+cpu
 --extra-index-url https://download.pytorch.org/whl/cpu
 
-# 💥 Importante para YOLOv12
-ultralytics==8.3.70
+git+https://github.com/ultralytics/ultralytics.git@main
