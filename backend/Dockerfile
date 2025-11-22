@@ -1,32 +1,36 @@
-# Base image: Usamos 3.10 para mayor compatibilidad con las librerías de ML/CV.
+# Base image: Usamos 3.10 para mayor compatibilidad con ML
 FROM python:3.10-slim
 
 # Evitar prompts interactivos
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Instalar dependencias de sistema necesarias para OpenCV y video
+# 🚀 IMPORTANTE: Asegurar que Python vea tu carpeta local 'ultralytics'
+# Esto fuerza a Python a buscar módulos en /app primero
+ENV PYTHONPATH=/app
+
+# Instalar dependencias de sistema necesarias
 RUN apt-get update && apt-get install -y \
-    git \ 
-    # Dependencias de OpenCV (libGL.so.1 resuelto con libgl1)
-    libgl1 \ 
+    # git \  <-- YA NO LO NECESITAS si no instalas desde git en requirements.txt
+    libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
-    # Soporte para manipulación de video si usas ffmpeg
     ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Establecer directorio de trabajo y copiar requirements
+# Establecer directorio de trabajo
 WORKDIR /app
-COPY requirements.txt .
 
-# Actualizar pip e instalar dependencias de Python
+# Copiar requirements e instalar dependencias
+COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copiar el código de la aplicación (incluye api.py, processing/, y modelos .pt)
+# 🚀 CRÍTICO: Copiar TODO el código
+# Esto subirá tu carpeta 'ultralytics/', 'processing/', 'api.py', etc.
 COPY . .
 
-# Comando para ejecutar FastAPI usando la variable de entorno $PORT de Railway
-# El puerto 8000 en la CMD es el fallback si $PORT no se define, pero Uvicorn lo respeta.
-CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8000"]
+# 🚀 CRÍTICO: Comando de inicio corregido para Railway
+# Usamos 'sh -c' para que lea la variable de entorno $PORT correctamente.
+# Si no haces esto, Railway te dará error 502/Bad Gateway.
+CMD ["sh", "-c", "uvicorn api:app --host 0.0.0.0 --port ${PORT:-8000}"]
