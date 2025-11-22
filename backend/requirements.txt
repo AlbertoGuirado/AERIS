@@ -16,6 +16,6 @@ torchvision==0.17.0+cpu
 torchaudio==2.2.0+cpu
 
 # Ultralytics compatible con numpy < 2.0
-ultralytics==8.3.2
+ultralytics==8.3.63
 
 --extra-index-url https://download.pytorch.org/whl/cpu
