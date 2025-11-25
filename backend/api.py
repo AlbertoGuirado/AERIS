@@ -23,7 +23,7 @@ app = FastAPI()
 # CORS para permitir React frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://aeris-proyect.vercel.app"],
+    allow_origins=["https://aeris-project.vercel.app"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
