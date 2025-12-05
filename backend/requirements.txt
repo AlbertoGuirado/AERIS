@@ -18,7 +18,6 @@ requests>=2.32.0
 huggingface-hub>=0.20.0
 py-cpuinfo
 
-# 🚨 LA QUE FALTA AHORA (Causa del crash actual)
 thop
 
 # A veces ultralytics moderno usa este fork, lo dejamos por seguridad
