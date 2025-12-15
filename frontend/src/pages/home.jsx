@@ -9,7 +9,7 @@ import { VideoCopy } from "../components/VideoFrame.jsx";
 import { Building } from "../components/building.jsx";
 
 const DEFAULT_IMPACT_CONFIDENCE = 0.3;
-const DEFAULT_OBJECT_CONFIDENCE = 0.02;
+const DEFAULT_OBJECT_CONFIDENCE = 0.2;
 
 export const Home = () => {
   const [impactConfidence, setImpactConfidence] = useState(
