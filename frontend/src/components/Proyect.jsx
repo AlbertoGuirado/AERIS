@@ -2,9 +2,9 @@ import { Brain, Database, Gauge, Layers } from "lucide-react";
 const summaryCards = [
   {
     title: "Dataset",
-    value: "Proprietary + Synthetic",
+    value: "External + Synthetic",
     description:
-      "Based on ISS sequences and complemented with a synthetic dataset generated via randomization (lighting, orientation, noise, textures) to improve robustness in extreme conditions and micro-impact detection.",
+      "Based on publicly available ISS imagery and complemented with a synthetic dataset generated via domain randomization (lighting, orientation, noise, textures) to improve robustness in extreme conditions and micro-impact detection.",
     Icon: Database,
   },
   {
