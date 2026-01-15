@@ -27,12 +27,7 @@ export default function Frame() {
     );
   };
 
-  const handleCvClick = () => {
-    window.open(
-      "https://albertoguifer.vercel.app/",
-      "_blank"
-    );
-  };
+  
 
   const socialIcons = [
     {
@@ -45,17 +40,7 @@ export default function Frame() {
       alt: "GitHub",
       onClick: handleGithubClick,
     },
-    {
-      icon: (
-        <img
-          src={iconDownloadCVUrl}
-          alt="Portfolio"
-          className="w-10 h-10 text-white"
-        />
-      ),
-      alt: "Portfolio",
-      onClick: handleCvClick,
-    },
+    
     {
       icon: <Mail className="w-8 h-8 text-white" />,
       alt: "Email",
