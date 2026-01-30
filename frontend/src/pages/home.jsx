@@ -52,7 +52,7 @@ export const Home = () => {
           </div>
         </div>
         <Proyect />
-        <Author />
+        {/* <Author /> */}
         {/* Footer */}
         <footer className="py-8 text-center text-muted-foreground border-t">
           <p>&copy; 2025</p>
